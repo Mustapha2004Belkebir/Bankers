@@ -40,7 +40,7 @@ Once you have the `app.exe` file on the `exec` directory, you can run the applic
 - `app.exe`: The executable file for running the application directly.
 
 
-## Deps:
+## Deps (dev):
 java 23.0.1 2024-10-15
 javac 23.0.1
 native-image 23.0.1 2024-10-15
