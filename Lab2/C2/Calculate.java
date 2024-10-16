@@ -4,7 +4,7 @@ public class Calculate {
     public static void main(String[] args) {
         // Check if the correct number of arguments are provided
         if (args.length != 3) {
-            System.out.println("Usage: java mySoftware <operator> <A> <B>");
+            System.out.println("Usage: java Calculate <operator> <A> <B>");
             return;
         }
 
