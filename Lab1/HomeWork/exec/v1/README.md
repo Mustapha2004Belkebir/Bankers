@@ -5,7 +5,7 @@ This document explains how to run the provided `.exe` binary, which handles the 
 
 ## Prerequisites
 - **Operating System**: Ensure you are running a compatible version of Windows.
-- **JDK**: Java is not required, as the binary package includes everything needed.
+- **JRE**: Java Runtime Environment is required, as this executable is a wrapper around the JAR file.
 
 ## Steps to Run the Binary
 
