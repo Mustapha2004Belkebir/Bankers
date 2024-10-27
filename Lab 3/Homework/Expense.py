@@ -78,7 +78,8 @@ class ExpenseApp(QMainWindow):
             self.table.setItem(row, 1, QTableWidgetItem(str(price)))
         
         self.update_total()
-
+        self.table.cellChanged.connect(self.update_total)
+        
     def add_expense(self):
         # Get the values from the input fields
         expense_name = self.expense_input.text().strip()
@@ -96,14 +97,18 @@ class ExpenseApp(QMainWindow):
 
         # Update the total
         self.update_total()
-
+        
     def update_total(self):
         # Calculate the total price
         total = 0.0
         for row in range(self.table.rowCount()):
             price_item = self.table.item(row, 1)
             if price_item:
-                total += float(price_item.text())
+                try:
+                    total += float(price_item.text())
+                except ValueError:
+                    pass
+
         self.total_value.setText(f"{total:.2f}")
 
 if __name__ == "__main__":
