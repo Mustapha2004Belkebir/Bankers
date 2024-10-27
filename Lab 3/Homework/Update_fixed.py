@@ -79,6 +79,7 @@ class ExpenseApp(QMainWindow):
             self.table.setItem(row, 1, QTableWidgetItem(f"{price:.2f}"))
         
         self.update_total()
+        self.table.cellChanged.connect(self.update_total)
 
     def add_expense(self):
         
