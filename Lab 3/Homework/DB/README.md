@@ -1,4 +1,4 @@
-## Guide to Installing SQLite and Using the `ExpensesDatabaseClient` Python Client
+ ## Guide to Installing SQLite and Using the `ExpensesDatabaseClient` Python Client
 
 ### 1. Installing SQLite
 
@@ -75,7 +75,7 @@ This file defines the `ExpensesDatabaseClient` class, which includes methods for
 To use the `ExpensesDatabaseClient`, create another Python file where your main code lives, e.g. `main.py`. This is an example usage of this client:
 
 ```python
-from expenses_db_client import ExpensesDatabaseClient
+from DB_Client import ExpensesDatabaseClient
 
 # Initialize the database client
 client = ExpensesDatabaseClient()
