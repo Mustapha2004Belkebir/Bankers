@@ -160,6 +160,9 @@ class ExpenseApp(QMainWindow):
         self.setMenuBar(self.menu_bar)
 
         self.expense_table = ExpenseTable(self.client, self)
+        self.expense_table.cellChanged.connect(self.update_total) # used for updating the total when 
+        #changing the cell by double clicking on it 
+        
         self.expense_input_panel = ExpenseInputPanel(self.expense_table, self.client, self.update_total, self)
         self.layout.addWidget(self.expense_input_panel)
         self.layout.addWidget(self.expense_table)

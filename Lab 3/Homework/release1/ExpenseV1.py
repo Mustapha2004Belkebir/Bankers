@@ -69,6 +69,7 @@ class ExpenseInputPanel(QWidget):
         self.table = table
         self.update_total_callback = update_total_callback
         self.setup_input_panel()
+        
 
     def setup_input_panel(self):
         layout = QHBoxLayout()
@@ -162,6 +163,9 @@ class ExpenseApp(QMainWindow):
 
         # Set up the table and input panel
         self.expense_table = ExpenseTable(self)
+        self.expense_table.cellChanged.connect(self.update_total) # used for updating the total when 
+        #changing the cell by double clicking on it 
+        
         self.expense_input_panel = ExpenseInputPanel(self.expense_table, self.update_total, self)
         self.layout.addWidget(self.expense_input_panel)
         self.layout.addWidget(self.expense_table)
