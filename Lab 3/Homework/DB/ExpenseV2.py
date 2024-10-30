@@ -5,7 +5,9 @@ from PyQt5.QtWidgets import (
     QLineEdit, QLabel, QPushButton, QMenuBar, QMenu
 )
 from PyQt5.QtCore import Qt
-from DB_CLIENT import ExpensesDatabaseClient
+from PyQt5.QtWidgets import QComboBox, QLabel, QPushButton, QHBoxLayout
+from PyQt5.QtCore import QDate
+from DB_Client import ExpensesDatabaseClient
 client = ExpensesDatabaseClient()
 class ExpenseMenu(QMenuBar):
     def __init__(self, parent=None):
@@ -58,6 +60,51 @@ class ExpenseTable(QTableWidget):
             if price_item:
                 total += float(price_item.text())
         return total
+class ExpenseSearch(QWidget):
+    def __init__(self, expense_table):
+        super().__init__()  
+        self.expense_table = expense_table
+        self.setup_search_panel()
+
+    def setup_search_panel(self):
+        layout = QHBoxLayout() 
+        
+        self.year_input = QComboBox()
+        self.year_input.setFixedWidth(100)
+        current_year = QDate.currentDate().year()
+        for i in range(10):
+            self.year_input.addItem(str(current_year - i))
+
+        # Month ComboBox for selecting months
+        self.month_input = QComboBox()
+        self.month_input.setFixedWidth(100)
+        months = ["January", "February", "March", "April", "May", "June", 
+                  "July", "August", "September", "October", "November", "December"]
+        self.month_input.addItems(months)
+    
+        # Search Button
+        search_button = QPushButton("Search")
+        search_button.clicked.connect(self.filtered_expense)
+
+        # Add widgets to layout
+        layout.addWidget(QLabel("Search by Year and Month:"))
+        layout.addWidget(self.year_input)
+        layout.addWidget(self.month_input)
+        layout.addWidget(search_button)
+        
+        self.setLayout(layout)
+
+
+    def filtered_expense(self):
+        year = self.year_input.currentText()
+        month = self.month_input.currentIndex() + 1
+
+        
+        filtered_expenses = self.expense_table.db_client.search_expenses(year, month)
+        self.expense_table.clear()
+
+        for expense, price in filtered_expenses:
+            self.expense_table.add_expense(expense, price)
 
 class ExpenseInputPanel(QWidget):
     def __init__(self, table, db_client: ExpensesDatabaseClient, update_total_callback, parent=None):
@@ -83,6 +130,8 @@ class ExpenseInputPanel(QWidget):
         update_button = QPushButton("Update Expense")
         update_button.clicked.connect(self.update_selected_expense)
 
+        
+
         layout.addWidget(QLabel("Expense:"))
         layout.addWidget(self.expense_input)
         layout.addWidget(QLabel("Price:"))
@@ -90,6 +139,8 @@ class ExpenseInputPanel(QWidget):
         layout.addWidget(add_button)
         layout.addWidget(update_button)
         self.setLayout(layout)
+    
+   
 
     def add_expense(self):
         expense_name = self.expense_input.text().strip()
@@ -158,14 +209,19 @@ class ExpenseApp(QMainWindow):
 
         self.menu_bar = ExpenseMenu(self)
         self.setMenuBar(self.menu_bar)
+ 
+        
 
         self.expense_table = ExpenseTable(self.client, self)
         self.expense_table.cellChanged.connect(self.update_total) # used for updating the total when 
         #changing the cell by double clicking on it 
-        
+        self.search_menu = ExpenseSearch(self.expense_table)
+
         self.expense_input_panel = ExpenseInputPanel(self.expense_table, self.client, self.update_total, self)
         self.layout.addWidget(self.expense_input_panel)
+        self.layout.addWidget(self.search_menu)
         self.layout.addWidget(self.expense_table)
+        
 
         total_label = QLabel("Total:")
         self.total_value = QLabel("0.00")
