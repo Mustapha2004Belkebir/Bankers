@@ -1,7 +1,9 @@
 CREATE TABLE expenses (
     exp_id INTEGER PRIMARY KEY,
     expense TEXT NOT NULL,
-    price REAL NOT NULL
+    price REAL NOT NULL,
+    date DATE NOT NULL
+
 );
 
 CREATE INDEX idx_expense ON expenses(expense);

@@ -13,6 +13,7 @@ The script contains the following SQL commands:
      - `exp_id`: An integer that serves as the primary key and auto-increments for each new entry.
      - `expense`: A text field to store the description of the expense (cannot be null).
      - `price`: A real number to store the cost of the expense (cannot be null).
+     - `date`: A `YYYY-MM-DD` format date, it should be sent by the consumer of the interface.
 
 2. **Create Indexes**: Creates indexes on the `expense` and `price` columns to optimize search queries.
    - `idx_expense`: An index on the `expense` column to speed up searches based on expense descriptions.

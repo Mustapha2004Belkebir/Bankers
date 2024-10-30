@@ -80,28 +80,47 @@ from DB_Client import ExpensesDatabaseClient
 # Initialize the database client
 client = ExpensesDatabaseClient()
 
-# Create some expenses
-client.create_expense("Lunch", 12.50)
-client.create_expense("Books", 30.00)
+# Create some expenses with date
+client.create_expense("Lunch", 12.50, date="2024-10-30")
+client.create_expense("Books", 30.00, date="2024-11-01")
+client.create_expense("Groceries", 45.75, date="2024-11-02")
 
-# Retrieve all expenses
-expenses = client.read_expenses()
-print("All Expenses:", expenses)
+# Retrieve all expenses with pagination (limit 2 per page)
+print("Page 1 of Expenses:")
+expenses_page_1 = client.read_expenses(limit=2, offset=0)
+print(expenses_page_1)
 
-# Update an expense
-if expenses:
-    client.update_expense(expenses[0][0], expense="Lunch with coffee", price=15.00)
+print("Page 2 of Expenses:")
+expenses_page_2 = client.read_expenses(limit=2, offset=2)
+print(expenses_page_2)
 
-# Read updated expenses
-updated_expenses = client.read_expenses()
+# Update an expense (update date along with expense and price)
+if expenses_page_1:
+    client.update_expense(expenses_page_1[0][0], expense="Lunch with coffee", price=15.00, date="2024-10-31")
+
+# Read updated expenses to verify changes
+updated_expenses = client.read_expenses(limit=10)
 print("Updated Expenses:", updated_expenses)
+
+# Search for expenses by filtering on specific fields
+print("Search for expenses containing 'Lunch':")
+search_results = client.search_expenses(expense="Lunch")
+print(search_results)
+
+print("Search for expenses on 2024-11-01:")
+search_results_date = client.search_expenses(date="2024-11-01", limit=10, offset=2)
+print(search_results_date)
+
+print("Search for expenses with price 45.75:")
+search_results_price = client.search_expenses(price=45.75)
+print(search_results_price)
 
 # Delete an expense
 if updated_expenses:
     client.delete_expense(updated_expenses[1][0])
 
-# Read final expenses
-final_expenses = client.read_expenses()
+# Read final expenses to verify deletion
+final_expenses = client.read_expenses(limit=10)
 print("Final Expenses:", final_expenses)
 ```
 
@@ -119,6 +138,7 @@ python main.py
 2. **`read_expenses`**: Retrieves all rows from the `expenses` table.
 3. **`update_expense`**: Updates a specific record identified by `exp_id`.
 4. **`delete_expense`**: Deletes a record from the table based on `exp_id`.
+5. **`search_expenses`**: Search expenses by filtering on expense, price, and/or date with pagination.
 
 Each function commits changes to the SQLite database, making the updates permanent.
 
