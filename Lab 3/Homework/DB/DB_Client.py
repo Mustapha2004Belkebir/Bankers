@@ -58,8 +58,9 @@ class ExpensesDatabaseClient:
             self.cursor.execute("UPDATE expenses SET date = ? WHERE exp_id = ?;", (date, exp_id))
             
         self.connection.commit()
-    def search_expenses(self, expense: Union[str, None] = None, price: Union[float, None] = None, date: Union[str, None] = None, limit: int = 10, offset: int = 0) -> List[Tuple[int, str, float, str]]:
-        """Search expenses by filtering on expense, price, and/or date with pagination."""
+
+    def search_expenses(self, expense: Union[str, None] = None, price: Union[float, None] = None, year: Union[int, None] = None, month: Union[int, None] = None, limit: int = 10, offset: int = 0) -> List[Tuple[int, str, float, str]]:
+        """Search expenses by filtering on expense, price, year, or month with pagination."""
         # Base query
         query = "SELECT * FROM expenses WHERE"
         filters = []
@@ -72,9 +73,12 @@ class ExpensesDatabaseClient:
         if price is not None:
             filters.append("price = ?")
             values.append(price)
-        if date is not None:
-            filters.append("date = ?")
-            values.append(date)
+        if year is not None:
+            filters.append("strftime('%Y', date) = ?")
+            values.append(str(year))  # Year as string for comparison
+        if month is not None:
+            filters.append("strftime('%m', date) = ?")
+            values.append(f"{month:02d}")  # Format month as two digits (e.g., '01', '02')
 
         # If no filters are provided, use a base query with pagination
         if not filters:
