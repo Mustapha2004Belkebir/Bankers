@@ -2,11 +2,14 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout,
     QHBoxLayout, QTableWidget, QTableWidgetItem, 
-    QLineEdit, QLabel, QPushButton, QMenuBar, QMenu
+    QLineEdit, QLabel, QPushButton, QMenuBar, QMenu, QMessageBox
 )
 from PyQt5.QtCore import Qt
-from DB_CLIENT import ExpensesDatabaseClient
+from DB_Client import ExpensesDatabaseClient
+from datetime import datetime
+
 client = ExpensesDatabaseClient()
+
 class ExpenseMenu(QMenuBar):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -24,27 +27,27 @@ class ExpenseTable(QTableWidget):
     def __init__(self, db_client: ExpensesDatabaseClient, parent=None):
         super().__init__(parent)
         self.db_client = db_client
-        self.setColumnCount(3)
-        self.setHorizontalHeaderLabels(["Expense", "Price", "Actions"])
+        self.setColumnCount(4)
+        self.setHorizontalHeaderLabels(["Expense", "Price", "Date", "Actions"])
         self.load_expenses()
 
     def load_expenses(self):
-        expenses = self.db_client.read_expenses()
-        for exp_id, expense, price in expenses:
-            self.add_expense(expense, price, exp_id)
+        expenses = self.db_client.read_all_expenses(3)
+        for exp_id, expense, price, date in expenses:
+            self.add_expense(expense, price, date, exp_id)
 
-    def add_expense(self, expense_name, price, exp_id=None):
+    def add_expense(self, expense_name, price, date, exp_id=None):
         row_position = self.rowCount()
         self.insertRow(row_position)
         self.setItem(row_position, 0, QTableWidgetItem(expense_name))
         self.setItem(row_position, 1, QTableWidgetItem(f"{price:.2f}"))
+        self.setItem(row_position, 2, QTableWidgetItem(date))
 
-        # Store exp_id in the item data for later retrieval
         self.item(row_position, 0).setData(Qt.UserRole, exp_id)
 
         delete_button = QPushButton("Delete")
         delete_button.clicked.connect(lambda: self.delete_expense(exp_id, row_position))
-        self.setCellWidget(row_position, 2, delete_button)
+        self.setCellWidget(row_position, 3, delete_button)
 
     def delete_expense(self, exp_id, row):
         self.db_client.delete_expense(exp_id)
@@ -58,7 +61,7 @@ class ExpenseTable(QTableWidget):
             if price_item:
                 total += float(price_item.text())
         return total
-
+    
 class ExpenseInputPanel(QWidget):
     def __init__(self, table, db_client: ExpensesDatabaseClient, update_total_callback, parent=None):
         super().__init__(parent)
@@ -69,6 +72,8 @@ class ExpenseInputPanel(QWidget):
 
     def setup_input_panel(self):
         layout = QHBoxLayout()
+        
+        # Inputs for expense and price
         self.expense_input = QLineEdit()
         self.expense_input.setPlaceholderText("Expense")
         self.expense_input.setFixedWidth(150)
@@ -77,68 +82,81 @@ class ExpenseInputPanel(QWidget):
         self.price_input.setPlaceholderText("Price")
         self.price_input.setFixedWidth(100)
 
+        # Inputs for date
+        self.day_input = QLineEdit()
+        self.day_input.setPlaceholderText("Day")
+        self.day_input.setFixedWidth(50)
+
+        self.month_input = QLineEdit()
+        self.month_input.setPlaceholderText("Month")
+        self.month_input.setFixedWidth(50)
+
+        self.year_input = QLineEdit()
+        self.year_input.setPlaceholderText("Year")
+        self.year_input.setFixedWidth(60)
+
+        # Buttons
         add_button = QPushButton("Add Expense")
         add_button.clicked.connect(self.add_expense)
-
-        update_button = QPushButton("Update Expense")
-        update_button.clicked.connect(self.update_selected_expense)
 
         layout.addWidget(QLabel("Expense:"))
         layout.addWidget(self.expense_input)
         layout.addWidget(QLabel("Price:"))
         layout.addWidget(self.price_input)
+        layout.addWidget(QLabel("Date (DD/MM/YYYY):"))
+        layout.addWidget(self.day_input)
+        layout.addWidget(self.month_input)
+        layout.addWidget(self.year_input)
         layout.addWidget(add_button)
-        layout.addWidget(update_button)
         self.setLayout(layout)
 
     def add_expense(self):
         expense_name = self.expense_input.text().strip()
         price_text = self.price_input.text().strip()
+        
+        day = self.day_input.text().strip()
+        month = self.month_input.text().strip()
+        year = self.year_input.text().strip()
 
-        if not expense_name or not price_text:
-            self.show_error("Please enter both expense and price.")
+        # Validate inputs
+        if not expense_name or not price_text or not day or not month or not year:
+            self.show_error("Please enter all inputs.")
             return
+
         try:
+            # Check that the price is a valid, non-negative float
             price = float(price_text)
             if price < 0:
                 self.show_error("Price cannot be negative.")
                 return
-            self.db_client.create_expense(expense_name, price)
-            self.table.add_expense(expense_name, price)
 
+            # Construct date from input and validate
+            input_date_str = f"{day.zfill(2)}/{month.zfill(2)}/{year}"
+            input_date = datetime.strptime(input_date_str, "%d/%m/%Y")
+            
+            # Get today's date
+            today = datetime.today()
+            
+            # Ensure date is greater than year 2000 and less than today's date
+            if input_date.year < 2000 or input_date >= today:
+                self.show_error("Date must be before today and after the year 2000.")
+                return
+
+            # If valid, add the expense
+            self.db_client.create_expense(expense_name, price, input_date_str)
+            self.table.add_expense(expense_name, price, input_date_str)
+
+            # Clear inputs and update total
             self.expense_input.clear()
             self.price_input.clear()
+            self.day_input.clear()
+            self.month_input.clear()
+            self.year_input.clear()
             self.update_total_callback()
+
         except ValueError:
-            self.show_error("Price must be a valid number.")
+            self.show_error("Please enter a valid price and date.")
 
-    def update_selected_expense(self):
-        selected_row = self.table.currentRow()
-        if selected_row == -1:
-            self.show_error("Please select a row to update.")
-            return
-
-        expense_name = self.expense_input.text().strip()
-        price_text = self.price_input.text().strip()
-
-        if not expense_name:
-            self.show_error("Expense name cannot be empty.")
-            return
-
-        try:
-            price = float(price_text)
-        except ValueError:
-            self.show_error("Please enter a valid numeric value for the price.")
-            return
-
-        exp_id = self.table.item(selected_row, 0).data(Qt.UserRole)  # Retrieve exp_id
-        self.db_client.update_expense(exp_id, expense_name, price)
-        self.table.setItem(selected_row, 0, QTableWidgetItem(expense_name))
-        self.table.setItem(selected_row, 1, QTableWidgetItem(f"{price:.2f}"))
-
-        self.expense_input.clear()
-        self.price_input.clear()
-        self.update_total_callback()
 
     def show_error(self, message):
         QMessageBox.critical(self, "Error", message)
@@ -147,9 +165,8 @@ class ExpenseApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Expense Tracker")
-        self.setGeometry(100, 100, 600, 300)
+        self.setGeometry(100, 100, 600, 400)
 
-        # Initialize the database client here
         self.client = client
 
         central_widget = QWidget()
@@ -160,8 +177,6 @@ class ExpenseApp(QMainWindow):
         self.setMenuBar(self.menu_bar)
 
         self.expense_table = ExpenseTable(self.client, self)
-        self.expense_table.cellChanged.connect(self.update_total) # used for updating the total when 
-        #changing the cell by double clicking on it 
         
         self.expense_input_panel = ExpenseInputPanel(self.expense_table, self.client, self.update_total, self)
         self.layout.addWidget(self.expense_input_panel)
